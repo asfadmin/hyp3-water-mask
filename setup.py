@@ -26,15 +26,18 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.6',
         ],
 
-    python_requires='~=3.7',
+    python_requires='~=3.6',
 
     install_requires=[
+        'boto3',
         'hyp3lib',
         'hyp3proclib',
         'importlib_metadata',
+        'keras',
+        'numpy',
     ],
 
     extras_require={
@@ -51,7 +54,6 @@ setup(
 
     entry_points={'console_scripts': [
             'hyp3_water_mask = hyp3_water_mask.__main__:main',
-            'proc_water_mask = hyp3_water_mask.process:main',
         ]
     },
 
