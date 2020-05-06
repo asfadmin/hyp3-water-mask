@@ -34,19 +34,21 @@ SHELL ["/bin/bash", "-l", "-c"]
 ENV PYTHONDONTWRITEBYTECODE=true
 WORKDIR /home/conda/
 
-RUN conda create -n hyp3-water-mask python=3.6 boto3 gdal imageio importlib_metadata \
+ENV S3_PYPI_HOST="hyp3-pypi.s3-website-us-east-1.amazonaws.com"
+ENV HYP3_REGISTRY="626226570674.dkr.ecr.us-east-1.amazonaws.com"
+
+RUN conda create -n hyp3-water-mask -c conda-forge python=3.6 boto3 gdal imageio importlib_metadata \
     keras lxml matplotlib netCDF4 numpy pillow proj \
     psycopg2 pyshp pytest pytest-console-scripts pytest-cov requests scipy \
     setuptools six statsmodels wheel && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
-    sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile
+    sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
+    python3 -m pip install --no-cache-dir hyp3_water_mask \
+    --trusted-host "${S3_PYPI_HOST}" \
+    --extra-index-url "http://${S3_PYPI_HOST}"
 
-ARG S3_PYPI_HOST
 
-# RUN python3 -m pip install --no-cache-dir hyp3_water_mask \
-#     --trusted-host "${S3_PYPI_HOST}" \
-#     --extra-index-url "http://${S3_PYPI_HOST}"
+ENTRYPOINT ["conda", "run", "-n", "hyp3-water-mask", "hyp3_water_mask"]
+CMD ["-h"]
 
-# ENTRYPOINT ["/usr/local/bin/hyp3_water_mask"]
-# CMD ["-v"]
