@@ -36,15 +36,16 @@ WORKDIR /home/conda/
 
 ENV S3_PYPI_HOST="hyp3-pypi.s3-website-us-east-1.amazonaws.com"
 ENV HYP3_REGISTRY="626226570674.dkr.ecr.us-east-1.amazonaws.com"
+ARG SDIST_SPEC
 
-RUN conda create -n hyp3-water-mask -c conda-forge python=3.6 boto3 gdal imageio importlib_metadata \
+RUN conda create -n hyp3-water-mask -c conda-forge python=3.7 boto3 gdal imageio importlib_metadata \
     keras lxml matplotlib netCDF4 numpy pillow proj \
     psycopg2 pyshp pytest pytest-console-scripts pytest-cov requests scipy \
     setuptools six statsmodels wheel && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
     sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
-    python3 -m pip install --no-cache-dir hyp3_water_mask \
+    python3 -m pip install --no-cache-dir hyp3_water_mask${SDIST_SPEC} \
     --trusted-host "${S3_PYPI_HOST}" \
     --extra-index-url "http://${S3_PYPI_HOST}"
 
