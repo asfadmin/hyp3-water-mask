@@ -34,8 +34,7 @@ SHELL ["/bin/bash", "-l", "-c"]
 ENV PYTHONDONTWRITEBYTECODE=true
 WORKDIR /home/conda/
 
-ENV S3_PYPI_HOST="hyp3-pypi.s3-website-us-east-1.amazonaws.com"
-ENV HYP3_REGISTRY="626226570674.dkr.ecr.us-east-1.amazonaws.com"
+ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
 RUN conda create -n hyp3-water-mask -c conda-forge python=3.7 boto3 gdal imageio importlib_metadata \
