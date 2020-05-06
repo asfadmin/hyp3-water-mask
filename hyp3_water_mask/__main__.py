@@ -265,7 +265,7 @@ def main():
     Main entrypoint for hyp3_water_mask
     """
     processor = Processor(
-        'water_mask', hyp3_water_mask, sci_version=hyp3_water_mask.__version__
+        'water_mask', process_water_mask, sci_version=hyp3_water_mask.__version__
     )
     processor.run()
 
