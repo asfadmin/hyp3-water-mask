@@ -30,8 +30,10 @@ import hyp3_water_mask
 
 
 class NoVVVHError(Exception):
-    log.info("Error: RTCs must have 'VV' or 'VH' in their filenames to run a water mask.")
+    log.info("Error: RTCs must have 'VV' or 'VH'"
+             "in their filenames to run a water mask.")
     pass
+
 
 def download_product(cfg, url):
     cmd = ('wget -nc %s -P %s' % (url, cfg['workdir']))
@@ -62,7 +64,6 @@ def download_product(cfg, url):
 # FIXME: copied in from proc_lib on the afl_dev branch... possibly bring into
 #        hyp3proclib
 def download_from_s3(src, dst, cfg, bucket):
-
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=cfg["aws_access_key_id"],
@@ -123,8 +124,8 @@ def write_mask_to_file(mask, file_name, projection, geo_transform):
 
 
 def mask_img(product, model, dst):
-    extract_name = re.compile(r"(.*).zip")        # Make sure this works
-    sar_regex = re.compile(r"(.*)_(VH|VV).tif")   # Make sure this works
+    extract_name = re.compile(r"(.*).zip")  # Make sure this works
+    sar_regex = re.compile(r"(.*)_(VH|VV).tif")  # Make sure this works
 
     mask = None
     f = None
@@ -240,13 +241,15 @@ def process_water_mask(cfg, n):
         raise Exception(msg.format(input_type))
 
     with get_db_connection('hyp3-db') as conn:
-        log.debug("Adding citation and zipping folder at {0}".format(output_path))
+        log.debug("Adding citation and zipping folder at {0}".
+                  format(output_path))
         add_citation(cfg, output_path)
         zip_file = "{}.zip".format(output_path)
         zip_dir(output_path, zip_file)
 
         if 'lag' in cfg and 'email_text' in cfg:
-            cfg['email_text'] += "\n" + "You are receiving this product {0} after it was acquired.".format(cfg['lag'])
+            cfg['email_text'] += "\nYou are receiving this product {0}" \
+                                 " after it was acquired.".format(cfg['lag'])
 
         cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
         cfg['original_product_size'] = 0
