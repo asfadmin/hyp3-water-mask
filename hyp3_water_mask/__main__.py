@@ -29,6 +29,10 @@ from osgeo import gdal
 import hyp3_water_mask
 
 
+class NoVVVHError(Exception):
+    log.info("Error: RTCs must have 'VV' or 'VH' in their filenames to run a water mask.")
+    pass
+
 def download_product(cfg, url):
     cmd = ('wget -nc %s -P %s' % (url, cfg['workdir']))
 
@@ -122,19 +126,17 @@ def mask_img(product, model, dst):
     extract_name = re.compile(r"(.*).zip")        # Make sure this works
     sar_regex = re.compile(r"(.*)_(VH|VV).tif")   # Make sure this works
 
-    # FIXME: this is to fix "reference before assignment" linting error on line 178
-    #        You're relying on things being defined in the for-loop after the loop has finished...
     mask = None
     f = None
+    invalid_pixels = None
 
     # Needed information for making a water mask
     # Subscription ID
     # Path . . . probably going to be a path to a S3 bucket
-    # TODO: Check and make sure this works in python 2 & works
+
     m = re.match(extract_name, product)
     folder = m.groups()
     log.info("DEBUGGING: folder: {}".format(folder))
-    # TODO: Make sure that this works
     for gran in os.listdir(folder[0]):
         granule = os.path.join(folder[0], gran)
         m = re.match(sar_regex, gran)
@@ -148,10 +150,8 @@ def mask_img(product, model, dst):
         original_shape = img_array.shape
         n_rows, n_cols = get_tile_row_col_count(*original_shape, tile_size=512)
 
-        # FIXME: this is to fix "reference before assignment" linting error -- look into this block's logic more
         vh_tiles = None
         vv_tiles = None
-        invalid_pixels = None
 
         if band == "VH":
             vh_array = pad_image(f.ReadAsArray(), 512)
@@ -162,9 +162,8 @@ def mask_img(product, model, dst):
             invalid_pixels = np.nonzero(vv_array == 0.0)
             vv_tiles = tile_image(vv_array)
         else:
-            # FIXME: should raise an exception here!
-            log.info("Error: RTCs must have 'VV' or 'VH' in their filenames to run a water mask.")
             log.info("Cannot run a water mask on {}".format(granule))
+            raise NoVVVHError
         # Predict masks
         masks = model.predict(
             np.stack((vh_tiles, vv_tiles), axis=3), batch_size=1, verbose=1
