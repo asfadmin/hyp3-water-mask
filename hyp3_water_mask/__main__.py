@@ -199,8 +199,9 @@ def process_water_mask(cfg, n):
     bucket = "s3://asf-ai-water-training-data/Networks/"
     model_src = "new64.zip"
     products = get_extra_arg(cfg, 'hyp3Products', '')
+    log.info(f"products for masking: {products}")
     input_type = cfg['input_type']
-
+    log.info(f"input_type: {cfg['input_type']}")
     if input_type.lower() == 'rtc':
         input_type = 'RTC'
     else:
@@ -224,6 +225,7 @@ def process_water_mask(cfg, n):
     model_dir = 'model'
     unzip(model_src, model_dir)
     model = load_model("{}/latest.h5".format(model_dir))
+    log.info(f"model: {model}")
 
     output_path = "{}_water_masks".format(cfg['sub_id'])
     os.mkdir(output_path)
@@ -266,11 +268,9 @@ def main():
     Main entrypoint for hyp3_water_mask
     """
 
-    log.info('Starting Proc water_mask')
     processor = Processor(
         'water_mask', process_water_mask, sci_version=hyp3_water_mask.__version__
     )
-    log.info(f"Created Processor obj: water_mask, process_water_mask, sci_version={hyp3_water_mask.__version__}")
     processor.run()
 
 
