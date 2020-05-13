@@ -195,6 +195,7 @@ def load_model(model_path):
 
 
 def process_water_mask(cfg, n):
+    log.info("process_water_mask")
     bucket = "s3://asf-ai-water-training-data/Networks/"
     model_src = "new64.zip"
     products = get_extra_arg(cfg, 'hyp3Products', '')
@@ -264,9 +265,12 @@ def main():
     """
     Main entrypoint for hyp3_water_mask
     """
+
+    log.info('Starting Proc water_mask')
     processor = Processor(
         'water_mask', process_water_mask, sci_version=hyp3_water_mask.__version__
     )
+    log.info(f"Created Processor obj: water_mask, process_water_mask, sci_version={hyp3_water_mask.__version__}")
     processor.run()
 
 
