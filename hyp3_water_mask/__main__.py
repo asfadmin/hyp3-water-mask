@@ -200,13 +200,15 @@ def process_water_mask(cfg, n):
     model_src = "new64.zip"
     products = get_extra_arg(cfg, 'hyp3Products', '')
     log.info(f"products for masking: {products}")
-    input_type = cfg['input_type']
-    log.info(f"input_type: {cfg['input_type']}")
-    if input_type.lower() == 'rtc':
-        input_type = 'RTC'
-    else:
-        failure(cfg, "Something went wrong, input type should be RTC.")
-        raise Exception("Something went wrong, input type should be RTC.")
+    log.info(f"cfg type: {type(cfg)}")
+    log.info(f"cfg: {cfg}")
+    #input_type = cfg['input_type']
+    #log.info(f"input_type: {cfg['input_type']}")
+    #if input_type.lower() == 'rtc':
+    #    input_type = 'RTC'
+    #else:
+    #    failure(cfg, "Something went wrong, input type should be RTC.")
+    #    raise Exception("Something went wrong, input type should be RTC.")
 
     message = "Processing water mask(s) from subscription {0} for {1}"
     log.info(message.format(cfg['sub_name'], cfg['username']))
