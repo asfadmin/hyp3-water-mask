@@ -201,8 +201,8 @@ def process_water_mask(cfg, n):
     cfg['log'] = "Processing started at {0} \n\n".format(date_time)
     download_count = 0
     # load model
-
-    model = load_model("network.h5")
+    log.info(os.listdir())
+    model = load_model("/home/conda/network.h5")
     log.info(f"model: {model}")
 
     output_path = "{}_water_masks".format(cfg['sub_id'])
