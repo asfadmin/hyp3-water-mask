@@ -200,7 +200,6 @@ def process_water_mask(cfg, n):
     model_src = "new64.zip"
     products = get_extra_arg(cfg, 'hyp3Products', '')
     log.info(f"products for masking: {products}")
-    log.info(f"cfg type: {type(cfg)}")
     log.info(f"cfg: {cfg}")
     # input_type = cfg['input_type']
     # log.info(f"input_type: {cfg['input_type']}")
