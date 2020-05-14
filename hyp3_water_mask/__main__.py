@@ -202,11 +202,11 @@ def process_water_mask(cfg, n):
     log.info(f"products for masking: {products}")
     log.info(f"cfg type: {type(cfg)}")
     log.info(f"cfg: {cfg}")
-    #input_type = cfg['input_type']
-    #log.info(f"input_type: {cfg['input_type']}")
-    #if input_type.lower() == 'rtc':
+    # input_type = cfg['input_type']
+    # log.info(f"input_type: {cfg['input_type']}")
+    # if input_type.lower() == 'rtc':
     #    input_type = 'RTC'
-    #else:
+    # else:
     #    failure(cfg, "Something went wrong, input type should be RTC.")
     #    raise Exception("Something went wrong, input type should be RTC.")
 
@@ -240,10 +240,10 @@ def process_water_mask(cfg, n):
             mask_img(product_url, model, output_path)
 
     if download_count == 0:
-        msg = "No {0} products for this job could be found. Are they expired?"
-        failure(cfg, msg.format(input_type))
-        msg = "No {0} products downloaded to process."
-        raise Exception(msg.format(input_type))
+        msg = "No products for this job could be found. Are they expired?"
+        failure(cfg, msg)
+        msg = "No products downloaded to process."
+        raise Exception(msg)
 
     with get_db_connection('hyp3-db') as conn:
         log.debug("Adding citation and zipping folder at {0}".
