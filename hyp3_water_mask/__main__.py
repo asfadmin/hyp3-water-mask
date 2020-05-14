@@ -4,10 +4,8 @@ water_mask processing for HyP3
 
 import os
 import re
-import traceback
 from datetime import datetime
 
-import boto3
 import numpy as np
 from hyp3lib import get_asf
 from hyp3proclib import (
@@ -59,6 +57,7 @@ def download_product(cfg, url):
 
         log.info('Unzip completed.')
         return True
+
 
 def get_tile_row_col_count(height, width, tile_size):
     return int(np.ceil(height / tile_size)), int(np.ceil(width / tile_size))
@@ -183,8 +182,6 @@ def load_model(model_path):
 
 def process_water_mask(cfg, n):
     log.info("process_water_mask")
-    bucket = "s3://asf-ai-water-training-data/Networks/"
-    model_src = "new64.zip"
     products = get_extra_arg(cfg, 'hyp3Products', '')
     log.info(f"products for masking: {products}")
     log.info(f"cfg: {cfg}")
