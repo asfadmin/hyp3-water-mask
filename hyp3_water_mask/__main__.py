@@ -60,19 +60,6 @@ def download_product(cfg, url):
         log.info('Unzip completed.')
         return True
 
-
-# FIXME: copied in from proc_lib on the afl_dev branch... possibly bring into
-#        hyp3proclib
-def download_from_s3(src, dst, cfg, bucket):
-    s3_client = boto3.client(
-        "s3",
-        aws_access_key_id=cfg["aws_access_key_id"],
-        aws_secret_access_key=cfg["aws_secret_access_key"],
-        region_name=cfg["aws_region"],
-    )
-    s3_client.download_file(bucket, src, dst)
-
-
 def get_tile_row_col_count(height, width, tile_size):
     return int(np.ceil(height / tile_size)), int(np.ceil(width / tile_size))
 
@@ -217,15 +204,8 @@ def process_water_mask(cfg, n):
     cfg['log'] = "Processing started at {0} \n\n".format(date_time)
     download_count = 0
     # load model
-    try:
-        download_from_s3(model_src, model_src, cfg, bucket)
-    except Exception:
-        log.info("Unexpected error: {}".format(traceback.format_exc()))
-        raise
 
-    model_dir = 'model'
-    unzip(model_src, model_dir)
-    model = load_model("{}/latest.h5".format(model_dir))
+    model = load_model("network.h5")
     log.info(f"model: {model}")
 
     output_path = "{}_water_masks".format(cfg['sub_id'])
