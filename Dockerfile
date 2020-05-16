@@ -7,8 +7,8 @@ LABEL org.opencontainers.image.description="HyP3 plugin for water masking"
 LABEL org.opencontainers.image.vendor="Alaska Satellite Facility"
 LABEL org.opencontainers.image.authors="ASF APD/Tools Team <uaf-asf-apd@alaska.edu>"
 LABEL org.opencontainers.image.licenses="BSD-3-Clause"
-LABEL org.opencontainers.image.url="https://scm.asf.alaska.edu/hyp3/hyp3-water-mask"
-LABEL org.opencontainers.image.source="https://scm.asf.alaska.edu/hyp3/hyp3-water-mask"
+LABEL org.opencontainers.image.url="https://github.com/asfadmin/hyp3-water-mask"
+LABEL org.opencontainers.image.source="https://github.com/asfadmin/hyp3-water-mask"
 # LABEL org.opencontainers.image.documentation=""
 
 # Dynamic lables to define at build time via `docker build --label`
@@ -16,7 +16,9 @@ LABEL org.opencontainers.image.source="https://scm.asf.alaska.edu/hyp3/hyp3-wate
 # LABEL org.opencontainers.image.version=""
 # LABEL org.opencontainers.image.revision=""
 
-RUN apt-get update && apt-get install -y unzip vim && apt-get clean
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends unzip vim && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG CONDA_GID=1000
 ARG CONDA_UID=1000
@@ -35,14 +37,12 @@ ENV PYTHONDONTWRITEBYTECODE=true
 WORKDIR /home/conda/
 
 COPY network.h5 ${WORKDIR}network.h5
+COPY conda-env.yml ${WORKDIR}conda-env.yaml
 
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
-RUN conda create -n hyp3-water-mask -c conda-forge python=3.7 boto3 gdal imageio importlib_metadata \
-    keras lxml matplotlib netCDF4 numpy pillow proj \
-    psycopg2 pyshp pytest pytest-console-scripts pytest-cov requests scipy \
-    setuptools six statsmodels wheel && \
+RUN conda env create -f conda-env.yml && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
     sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
