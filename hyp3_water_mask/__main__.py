@@ -5,6 +5,7 @@ water_mask processing for HyP3
 import os
 import re
 from datetime import datetime
+from glob import glob
 
 import numpy as np
 from hyp3lib import get_asf
@@ -21,6 +22,7 @@ from hyp3proclib.db import get_db_connection
 from hyp3proclib.file_system import add_citation
 from hyp3proclib.logger import log
 from hyp3proclib.proc_base import Processor
+from keras import Model as keras_model
 from keras.models import load_model as kload_model
 from osgeo import gdal
 
@@ -33,16 +35,16 @@ class NoVVVHError(Exception):
     pass
 
 
-def download_product(cfg, url):
-    cmd = ('wget -nc %s -P %s' % (url, cfg['workdir']))
-
+def download_product(cfg: dict, url: str, download_dir: str) -> bool:
+    cmd = ('wget -nc %s -P %s' % (url, f"{download_dir}"))
+    log.info(f"wget command: {cmd}")
     o, ok = get_asf.execute(cmd, quiet=True)
     if not ok:
         log.info('Failed to download HyP3 product: {0}'.format(url))
         return False
 
     file_name = os.path.basename(url)
-    zip_file = os.path.join(cfg['workdir'], file_name)
+    zip_file = os.path.join(download_dir, file_name)
 
     if not os.path.isfile(zip_file):
         msg = "An error occurred while preparing the products for processing."
@@ -53,17 +55,17 @@ def download_product(cfg, url):
         log.info('Download complete')
         log.info('Unzipping {0}'.format(zip_file))
 
-        unzip(zip_file, cfg['workdir'])
+        unzip(zip_file, download_dir)
 
         log.info('Unzip completed.')
         return True
 
 
-def get_tile_row_col_count(height, width, tile_size):
+def get_tile_row_col_count(height: int, width: int, tile_size: int) -> tuple:
     return int(np.ceil(height / tile_size)), int(np.ceil(width / tile_size))
 
 
-def pad_image(image, to):
+def pad_image(image: np.ndarray, to: int) -> np.ndarray:
     height, width = image.shape
 
     n_rows, n_cols = get_tile_row_col_count(height, width, to)
@@ -75,7 +77,7 @@ def pad_image(image, to):
     return padded
 
 
-def tile_image(image, width=512, height=512):
+def tile_image(image: np.ndarray, width=512, height=512) -> np.ndarray:
     _nrows, _ncols = image.shape
     _strides = image.strides
 
@@ -97,7 +99,7 @@ def tile_image(image, width=512, height=512):
     ).reshape(nrows * ncols, height, width)
 
 
-def write_mask_to_file(mask, file_name, projection, geo_transform):
+def write_mask_to_file(mask: np.ndarray, file_name: str, projection: str, geo_transform: tuple) -> None:
     (width, height) = mask.shape
     out_image = gdal.GetDriverByName('GTiff').Create(
         file_name, height, width, bands=1
@@ -109,64 +111,47 @@ def write_mask_to_file(mask, file_name, projection, geo_transform):
     out_image.FlushCache()
 
 
-def mask_img(product, model, dst):
-    extract_name = re.compile(r"(.*).zip")  # Make sure this works
-    sar_regex = re.compile(r"(.*)_(VH|VV).tif")  # Make sure this works
-
-    mask = None
-    f = None
-    invalid_pixels = None
-
-    # Needed information for making a water mask
-    # Subscription ID
-    # Path . . . probably going to be a path to a S3 bucket
-
-    m = re.match(extract_name, product)
-    folder = m.groups()
-    log.info("DEBUGGING: folder: {}".format(folder))
-    for gran in os.listdir(folder[0]):
-        granule = os.path.join(folder[0], gran)
-        m = re.match(sar_regex, gran)
-        if not m or gran.endswith('xml'):
-            continue
-
-        _, band = m.groups()
-
-        f = gdal.Open(granule)
-        img_array = f.ReadAsArray()
-        original_shape = img_array.shape
-        n_rows, n_cols = get_tile_row_col_count(*original_shape, tile_size=512)
-
-        vh_tiles = None
-        vv_tiles = None
-
-        if band == "VH":
-            vh_array = pad_image(f.ReadAsArray(), 512)
-            invalid_pixels = np.nonzero(vh_array == 0.0)
-            vh_tiles = tile_image(vh_array)
-        elif band == "VV":
-            vv_array = pad_image(f.ReadAsArray(), 512)
-            invalid_pixels = np.nonzero(vv_array == 0.0)
-            vv_tiles = tile_image(vv_array)
+def group_polarizations(tif_paths: list) -> dict:
+    pths = {}
+    for tif in tif_paths:
+        product_name = os.path.basename(tif).split('.')[0][:-3]
+        if product_name in pths:
+            pths[product_name].append(tif)
         else:
-            log.info("Cannot run a water mask on {}".format(granule))
-            raise NoVVVHError
-        # Predict masks
-        masks = model.predict(
-            np.stack((vh_tiles, vv_tiles), axis=3), batch_size=1, verbose=1
-        )
-        masks.round(decimals=0, out=masks)
-        # Stitch masks together
-        mask = masks.reshape((n_rows, n_cols, 512, 512)) \
-            .swapaxes(1, 2) \
-            .reshape(n_rows * 512, n_cols * 512)  # yapf: disable
-
-        mask[invalid_pixels] = 0
-    outfile = "{}/{}_WM.tif".format(dst, folder)
-    write_mask_to_file(mask, outfile, f.GetProjection(), f.GetGeoTransform())
+            pths.update({product_name: [tif]})
+            pths[product_name].sort()
+    return pths
 
 
-def load_model(model_path):
+def confirm_dual_polarizations(paths: dict) -> bool:
+    vv_regex = "(vv|VV)"
+    vh_regex = "(vh|VH)"
+    for pth in paths:
+        vv = False
+        vh = False
+        if len(paths[pth]) == 2:
+            for p in paths[pth]:
+                if re.search(vv_regex, p):
+                    vv = True
+                elif re.search(vh_regex, p):
+                    vh = True
+            if not vv or not vh:
+                return False
+        else:
+            return False
+    return True
+
+
+def get_tif_paths(regex: str, pths: str) -> list:
+    tif_paths = []
+    for pth in glob(pths):
+        tif_path = re.search(regex, pth)
+        if tif_path:
+            tif_paths.append(pth)
+    return tif_paths
+
+
+def load_model(model_path: str) -> keras_model:
     """ Loads and returns a model. Attaches the model name and that model's
     history. """
     model_dir = os.path.dirname(model_path)
@@ -180,11 +165,47 @@ def load_model(model_path):
     return model
 
 
-def process_water_mask(cfg, n):
+def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> None:
+    for pair in grouped_paths:
+        for tif in grouped_paths[pair]:
+            f = gdal.Open(tif)
+            img_array = f.ReadAsArray()
+            original_shape = img_array.shape
+            n_rows, n_cols = get_tile_row_col_count(*original_shape, tile_size=512)
+            log.info(f'tif: {tif}')
+            if 'vv' in tif or 'VV' in tif:
+                vv_array = pad_image(f.ReadAsArray(), 512)
+                invalid_pixels = np.nonzero(vv_array == 0.0)
+                vv_tiles = tile_image(vv_array)
+            else:
+                vh_array = pad_image(f.ReadAsArray(), 512)
+                invalid_pixels = np.nonzero(vh_array == 0.0)
+                vh_tiles = tile_image(vh_array)
+
+        # Predict masks
+        masks = model.predict(
+            np.stack((vh_tiles, vv_tiles), axis=3), batch_size=1, verbose=1
+        )
+        masks.round(decimals=0, out=masks)
+        # Stitch masks together
+        mask = masks.reshape((n_rows, n_cols, 512, 512)) \
+            .swapaxes(1, 2) \
+            .reshape(n_rows * 512, n_cols * 512)  # yapf: disable
+
+        mask[invalid_pixels] = 0
+        filename, ext = os.path.basename(tif).split('.')
+        outfile = f"{output_dir}/{filename[:-3]}_water_mask.{ext}"
+        write_mask_to_file(mask, outfile, f.GetProjection(), f.GetGeoTransform())
+
+
+def process_water_mask(cfg: dict, n: int) -> None:
     log.info("process_water_mask")
-    products = get_extra_arg(cfg, 'hyp3Products', '')
-    log.info(f"products for masking: {products}")
+    product_urls = get_extra_arg(cfg, 'hyp3Products', '')
+    log.info(f"products for masking: {product_urls}")
     log.info(f"cfg: {cfg}")
+    message = "Processing water mask(s) from subscription {0} for {1}"
+    log.info(message.format(cfg['sub_name'], cfg['username']))
+
     # input_type = cfg['input_type']
     # log.info(f"input_type: {cfg['input_type']}")
     # if input_type.lower() == 'rtc':
@@ -193,34 +214,54 @@ def process_water_mask(cfg, n):
     #    failure(cfg, "Something went wrong, input type should be RTC.")
     #    raise Exception("Something went wrong, input type should be RTC.")
 
-    message = "Processing water mask(s) from subscription {0} for {1}"
-    log.info(message.format(cfg['sub_name'], cfg['username']))
-
     # Start downloading and processing
     date_time = str(datetime.now())
-    cfg['log'] = "Processing started at {0} \n\n".format(date_time)
+    cfg['log'] = f"Processing started at {date_time}"
     download_count = 0
+
     # load model
     log.info(os.listdir())
     model = load_model("/home/conda/network.h5")
     log.info(f"model: {model}")
 
-    output_path = "{}_water_masks".format(cfg['sub_id'])
-    os.mkdir(output_path)
-    for product_url in products:
-        if download_product(cfg, product_url):
+    workdir = os.getcwd()
+    products_dir = "products"
+    output_dir = f"{cfg['sub_id']}_water_masks"
+    output_path = f"{workdir}/{output_dir}"
+    os.mkdir(output_dir)
+    os.mkdir("products")
+    for product_url in product_urls:
+        log.info(f"product_url: {product_url}")
+        if download_product(cfg, product_url, f"{workdir}/{products_dir}"):
             download_count += 1
-            # Mask the product
-            product_name, _ = os.path.splitext(product_url.split('/')[-1])
-            log.info("Creating a water mask for {}".format(product_name))
-            mask_img(product_url, model, output_path)
+        if download_count == 0:
+            msg = "No products for this job could be found. Are they expired?"
+            failure(cfg, msg)
+            msg = "No products downloaded to process."
+            raise Exception(msg)
+        else:
+            log.info(f"Downloaded {download_count} product/s")
 
-    if download_count == 0:
-        msg = "No products for this job could be found. Are they expired?"
-        failure(cfg, msg)
-        msg = "No products downloaded to process."
-        raise Exception(msg)
+    # Mask the product
+    # product_name, _ = os.path.splitext(product_url.split('/')[-1])
+    # log.info(f"Creating a water mask for {product_name}")
+    # log.info(f"output_path: {output_path}")
+    # mask_img(product_url, model, output_path)
 
+    # Identify and group VV/VH tif pairs
+    product_paths = f"{workdir}/{products_dir}/*/*"
+    tif_regex = "\\w[\\--~]{5,300}(_|-)V(v|V|h|H).(tif|tiff)$"
+    tif_paths = get_tif_paths(tif_regex, product_paths)
+    grouped_paths = group_polarizations(tif_paths)
+    if not confirm_dual_polarizations(grouped_paths):
+        log.info("ERROR: Hyp3_water_mask requires both VV and VH polarizations.")
+    else:
+        log.info("Confirmed presence of VV and VH polarities for each product.")
+
+    # Generate masks
+    make_masks(grouped_paths, model, output_path)
+
+    # Upload products and update database
     with get_db_connection('hyp3-db') as conn:
         log.debug("Adding citation and zipping folder at {0}".
                   format(output_path))
