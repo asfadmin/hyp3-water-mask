@@ -42,7 +42,10 @@ COPY conda-env.yml ${WORKDIR}conda-env.yaml
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
-RUN conda env create -f conda-env.yml && \
+RUN conda create -n hyp3-water-mask -c conda-forge python=3.7 boto3 gdal imageio importlib_metadata \
+    keras lxml matplotlib netCDF4 numpy pillow proj \
+    psycopg2 pyshp pytest pytest-console-scripts pytest-cov requests scipy \
+    setuptools six statsmodels wheel && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
     sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
