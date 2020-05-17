@@ -27,6 +27,7 @@ jobs:
 
       - uses: goanpeca/setup-miniconda@v1
         with:
+          miniconda-version: '4.7.12'
           auto-update-conda: true
           python-version: 3.7
           activate-environment: hyp3-water-mask

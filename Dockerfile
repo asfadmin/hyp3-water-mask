@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:py37_4.8.2
+FROM continuumio/miniconda3:4.7.12
 
 # For opencontainers label definitions, see:
 #    https://github.com/opencontainers/image-spec/blob/master/annotations.md
