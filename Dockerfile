@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.7.12
+FROM continuumio/miniconda3:py37_4.8.2
 
 # For opencontainers label definitions, see:
 #    https://github.com/opencontainers/image-spec/blob/master/annotations.md
@@ -42,8 +42,7 @@ COPY conda-env.yml ${WORKDIR}conda-env.yaml
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
-RUN conda update -n base -c defaults conda && \
-    conda env create -f conda-env.yml && \
+RUN conda env create -f conda-env.yml && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
     sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
