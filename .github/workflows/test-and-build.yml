@@ -29,7 +29,7 @@ jobs:
         with:
           miniconda-version: '4.7.12'
           auto-update-conda: true
-          python-version: 3.7
+          python-version: ~3.7
           activate-environment: hyp3-water-mask
           environment-file: conda-env.yml
           channels: conda-forge, nodefaults
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: ~3.7
 
       - name: Install dependencies
         run: |
