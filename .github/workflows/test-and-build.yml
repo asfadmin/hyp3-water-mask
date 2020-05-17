@@ -28,7 +28,7 @@ jobs:
       - uses: goanpeca/setup-miniconda@v1
         with:
           auto-update-conda: true
-          python-version: 3.8
+          python-version: 3.7
           activate-environment: hyp3-water-mask
           environment-file: conda-env.yml
           channels: conda-forge, nodefaults
@@ -89,7 +89,7 @@ jobs:
 
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.7
 
       - name: Install dependencies
         run: |

@@ -42,7 +42,7 @@ COPY conda-env.yml ${WORKDIR}conda-env.yaml
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
-RUN conda update --all && \
+RUN conda update -n base -c defaults conda && \
     conda env create -f conda-env.yml && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
