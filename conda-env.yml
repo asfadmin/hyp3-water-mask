@@ -13,14 +13,14 @@ dependencies:
   - pytest-cov
   # For running
   - gdal
-  # - imageio
+  - imageio
   - importlib_metadata
   - keras
   - lxml
-  # - matplotlib
+  - matplotlib
   - netCDF4
   - numpy
-  # - pillow
+  - pillow
   - proj
   - psycopg2
   - pyshp
