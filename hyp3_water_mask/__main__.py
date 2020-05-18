@@ -55,6 +55,7 @@ def download_product(cfg: dict, url: str, download_dir: str) -> bool:
         log.info('Download complete')
         log.info(f"Unzipping {zip_file} to {download_dir}")
         unzip(zip_file, download_dir)
+        log.info(f"download_dir ls: {os.listdir(download_dir)}")
         log.info('Unzip completed.')
         return True
 
@@ -207,14 +208,6 @@ def process_water_mask(cfg: dict, n: int) -> None:
     message = "Processing water mask(s) from subscription {0} for {1}"
     log.info(message.format(cfg['sub_name'], cfg['username']))
 
-    # input_type = cfg['input_type']
-    # log.info(f"input_type: {cfg['input_type']}")
-    # if input_type.lower() == 'rtc':
-    #    input_type = 'RTC'
-    # else:
-    #    failure(cfg, "Something went wrong, input type should be RTC.")
-    #    raise Exception("Something went wrong, input type should be RTC.")
-
     # Start downloading and processing
     date_time = str(datetime.now())
     cfg['log'] = f"Processing started at {date_time}"
@@ -261,11 +254,11 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
     # Upload products and update database
     with get_db_connection('hyp3-db') as conn:
-        log.debug("Adding citation and zipping folder at {0}".
-                  format(output_path))
+        log.debug(f"Adding citation and zipping folder at {output_path}")
         add_citation(cfg, output_path)
-        zip_file = "{}.zip".format(output_path)
+        zip_file = f"{workdir}/water-mask-{cfg['sub']}.zip"
         zip_dir(output_path, zip_file)
+        log.info(os.listdir(workdir))
 
         if 'lag' in cfg and 'email_text' in cfg:
             cfg['email_text'] += "\nYou are receiving this product {0}" \
