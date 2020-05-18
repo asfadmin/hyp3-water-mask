@@ -226,9 +226,8 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
     workdir = os.getcwd()
     products_dir = "products"
-    output_dir = f"{cfg['sub_id']}_water_masks"
-    output_path = f"{workdir}/{output_dir}"
-    os.mkdir(output_dir)
+    output_path = f"{workdir}/output"
+    os.mkdir(output_path)
     os.mkdir("products")
     for product_url in product_urls:
         log.info(f"product_url: {product_url}")
@@ -242,17 +241,12 @@ def process_water_mask(cfg: dict, n: int) -> None:
         else:
             log.info(f"Downloaded {download_count} product/s")
 
-    # Mask the product
-    # product_name, _ = os.path.splitext(product_url.split('/')[-1])
-    # log.info(f"Creating a water mask for {product_name}")
-    # log.info(f"output_path: {output_path}")
-    # mask_img(product_url, model, output_path)
-
     # Identify and group VV/VH tif pairs
     product_paths = f"{workdir}/{products_dir}/*/*"
     tif_regex = "\\w[\\--~]{5,300}(_|-)V(v|V|h|H).(tif|tiff)$"
     tif_paths = get_tif_paths(tif_regex, product_paths)
     grouped_paths = group_polarizations(tif_paths)
+    log.info(f"grouped_paths: {grouped_paths}")
     if not confirm_dual_polarizations(grouped_paths):
         log.info("ERROR: Hyp3_water_mask requires both VV and VH polarizations.")
     else:
@@ -260,6 +254,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
     # Generate masks
     make_masks(grouped_paths, model, output_path)
+    log.info(f"water_masks: {os.listdir(output_path)}")
 
     # Upload products and update database
     with get_db_connection('hyp3-db') as conn:
