@@ -124,22 +124,25 @@ def group_polarizations(tif_paths: list) -> dict:
 
 
 def confirm_dual_polarizations(paths: dict) -> bool:
-    vv_regex = "(vv|VV)"
-    vh_regex = "(vh|VH)"
-    for pth in paths:
-        vv = False
-        vh = False
-        if len(paths[pth]) == 2:
-            for p in paths[pth]:
-                if re.search(vv_regex, p):
-                    vv = True
-                elif re.search(vh_regex, p):
-                    vh = True
-            if not vv or not vh:
+    if len(paths) > 0:
+        vv_regex = "(vv|VV)"
+        vh_regex = "(vh|VH)"
+        for pth in paths:
+            vv = False
+            vh = False
+            if len(paths[pth]) == 2:
+                for p in paths[pth]:
+                    if re.search(vv_regex, p):
+                        vv = True
+                    elif re.search(vh_regex, p):
+                        vh = True
+                if not vv or not vh:
+                    return False
+            else:
                 return False
-        else:
-            return False
-    return True
+        return True
+    else:
+        return False
 
 
 def get_tif_paths(regex: str, pths: str) -> list:
@@ -225,13 +228,14 @@ def process_water_mask(cfg: dict, n: int) -> None:
     log.info(f"model: {model}")
 
     workdir = os.getcwd()
-    products_dir = "products"
+    log.info(f"workdir: {workdir}")
+    products_path = f"{workdir}/products"
     output_path = f"{workdir}/output"
     os.mkdir(output_path)
     os.mkdir("products")
     for product_url in product_urls:
         log.info(f"product_url: {product_url}")
-        if download_product(cfg, product_url, f"{workdir}/{products_dir}"):
+        if download_product(cfg, product_url, products_path):
             download_count += 1
         if download_count == 0:
             msg = "No products for this job could be found. Are they expired?"
@@ -242,9 +246,10 @@ def process_water_mask(cfg: dict, n: int) -> None:
             log.info(f"Downloaded {download_count} product/s")
 
     # Identify and group VV/VH tif pairs
-    product_paths = f"{workdir}/{products_dir}/*/*"
+    product_paths = f"{products_path}/*/*"
     tif_regex = "\\w[\\--~]{5,300}(_|-)V(v|V|h|H).(tif|tiff)$"
     tif_paths = get_tif_paths(tif_regex, product_paths)
+    log.info(f"tif_paths: {tif_paths}")
     grouped_paths = group_polarizations(tif_paths)
     log.info(f"grouped_paths: {grouped_paths}")
     if not confirm_dual_polarizations(grouped_paths):
