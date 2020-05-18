@@ -42,7 +42,7 @@ COPY conda-env.yml ${WORKDIR}conda-env.yaml
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
 
-RUN conda env create -f conda-env.yml && \
+RUN conda env create -f ${WORKDIR}conda-env.yml && \
     conda clean -afy && \
     conda activate hyp3-water-mask && \
     sed -i 's/conda activate base/conda activate hyp3-water-mask/g' /home/conda/.profile && \
