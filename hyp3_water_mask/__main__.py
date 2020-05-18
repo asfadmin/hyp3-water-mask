@@ -53,10 +53,8 @@ def download_product(cfg: dict, url: str, download_dir: str) -> bool:
         raise Exception(msg.format(zip_file))
     else:
         log.info('Download complete')
-        log.info('Unzipping {0}'.format(zip_file))
-
+        log.info(f"Unzipping {zip_file} to {download_dir}")
         unzip(zip_file, download_dir)
-
         log.info('Unzip completed.')
         return True
 
@@ -235,7 +233,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
     os.mkdir("products")
     for product_url in product_urls:
         log.info(f"product_url: {product_url}")
-        if download_product(cfg, product_url, products_path):
+        if download_product(cfg, product_url, f"{products_path}/"):
             download_count += 1
         if download_count == 0:
             msg = "No products for this job could be found. Are they expired?"
