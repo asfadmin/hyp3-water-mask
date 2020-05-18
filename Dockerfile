@@ -37,7 +37,7 @@ ENV PYTHONDONTWRITEBYTECODE=true
 WORKDIR /home/conda/
 
 COPY network.h5 ${WORKDIR}network.h5
-COPY conda-env.yml ${WORKDIR}conda-env.yaml
+COPY conda-env.yml ${WORKDIR}conda-env.yml
 
 ARG S3_PYPI_HOST
 ARG SDIST_SPEC
