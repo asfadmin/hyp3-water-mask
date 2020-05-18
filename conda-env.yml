@@ -1,7 +1,6 @@
 name: hyp3-water-mask
 channels:
   - conda-forge
-  - nodefaults
 dependencies:
   - python~=3.7
   - pip
