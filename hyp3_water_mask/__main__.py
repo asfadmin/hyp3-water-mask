@@ -19,7 +19,7 @@ from hyp3proclib import (
     zip_dir
 )
 from hyp3proclib.db import get_db_connection
-# from hyp3proclib.file_system import add_citation
+from hyp3proclib.file_system import add_citation
 from hyp3proclib.logger import log
 from hyp3proclib.proc_base import Processor
 from keras import Model as keras_model
@@ -255,8 +255,8 @@ def process_water_mask(cfg: dict, n: int) -> None:
     # Upload products and update database
     with get_db_connection('hyp3-db') as conn:
         log.debug(f"Adding citation and zipping folder at {output_path}")
-        # add_citation(cfg, output_path)
-        zip_file = f"water_mask_{cfg['sub']}.zip"
+        add_citation(cfg, output_path)
+        zip_file = f"water_mask_{cfg['sub_id']}.zip"
         log.info(f"zip_file: {zip_file}")
         zip_dir(output_path, zip_file)
 
