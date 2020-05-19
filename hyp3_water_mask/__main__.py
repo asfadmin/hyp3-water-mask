@@ -253,7 +253,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
         log.info("Confirmed presence of VV and VH polarities for each product.")
 
     # Generate masks
-    success = make_masks(grouped_paths, model, output_path)
+    proc_success = make_masks(grouped_paths, model, output_path)
     log.info(f"water_masks: {os.listdir(output_path)}")
 
     # Upload products and update database
@@ -272,10 +272,10 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
         cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
         cfg['original_product_size'] = 0
-        cfg['process_time'] = str(datetime.now()- cfg['process_start_time'])
+        cfg['process_time'] = str(datetime.now() - cfg['process_start_time'])
         cfg['subscriptions'] = cfg['sub_id']
         cfg['processes'] = cfg['proc_id']
-        if success:
+        if proc_success:
             cfg['success'] = True
         else:
             cfg['success'] = False
