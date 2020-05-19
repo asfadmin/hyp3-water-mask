@@ -4,7 +4,6 @@ water_mask processing for HyP3
 
 import os
 import re
-import sys
 from datetime import datetime
 from glob import glob
 
