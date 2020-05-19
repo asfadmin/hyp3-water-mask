@@ -167,7 +167,7 @@ def load_model(model_path: str) -> keras_model:
     return model
 
 
-def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> None:
+def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> bool:
     for pair in grouped_paths:
         for tif in grouped_paths[pair]:
             f = gdal.Open(tif)
@@ -198,6 +198,10 @@ def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> None
         filename, ext = os.path.basename(tif).split('.')
         outfile = f"{output_dir}/{filename[:-3]}_water_mask.{ext}"
         write_mask_to_file(mask, outfile, f.GetProjection(), f.GetGeoTransform())
+        if not os.path.isfile(outfile):
+            log.info(f"failed to write mask to {outfile}")
+            return False
+    return True
 
 
 def process_water_mask(cfg: dict, n: int) -> None:
@@ -249,7 +253,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
         log.info("Confirmed presence of VV and VH polarities for each product.")
 
     # Generate masks
-    make_masks(grouped_paths, model, output_path)
+    success = make_masks(grouped_paths, model, output_path)
     log.info(f"water_masks: {os.listdir(output_path)}")
 
     # Upload products and update database
@@ -268,6 +272,13 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
         cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
         cfg['original_product_size'] = 0
+        cfg['process_time'] = str(datetime.now()- cfg['process_start_time'])
+        cfg['subscriptions'] = cfg['sub_id']
+        cfg['processes'] = cfg['proc_id']
+        if success:
+            cfg['success'] = True
+        else:
+            cfg['success'] = False
         record_metrics(cfg, conn)
 
         log.debug("Using file paths: {0}".format(zip_file))
