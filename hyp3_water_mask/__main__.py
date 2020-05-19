@@ -4,9 +4,9 @@ water_mask processing for HyP3
 
 import os
 import re
+import sys
 from datetime import datetime
 from glob import glob
-import sys
 
 import numpy as np
 from hyp3lib import get_asf
@@ -257,13 +257,10 @@ def process_water_mask(cfg: dict, n: int) -> None:
     with get_db_connection('hyp3-db') as conn:
         log.debug(f"Adding citation and zipping folder at {output_path}")
         add_citation(cfg, output_path)
-        zip_file = f"{workdir}/water_mask_{cfg['sub']}.zip"
+        zip_file = f"water_mask_{cfg['sub']}.zip"
         log.info(f"zip_file: {zip_file}")
-        try:
-            zip_dir(output_path, zip_file)
-        except:
-            print(f"Unexpected error: {sys.exc_info()[0]}")
-            raise
+        zip_dir(output_path, zip_file)
+
         log.info(f"workdir ls: {os.listdir(workdir)}")
 
         if 'lag' in cfg and 'email_text' in cfg:
