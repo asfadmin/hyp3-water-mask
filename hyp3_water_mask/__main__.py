@@ -19,7 +19,7 @@ from hyp3proclib import (
     zip_dir
 )
 from hyp3proclib.db import get_db_connection
-from hyp3proclib.file_system import add_citation
+# from hyp3proclib.file_system import add_citation
 from hyp3proclib.logger import log
 from hyp3proclib.proc_base import Processor
 from keras import Model as keras_model
