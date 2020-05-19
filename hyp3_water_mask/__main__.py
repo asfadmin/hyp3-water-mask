@@ -12,7 +12,6 @@ from hyp3lib import get_asf
 from hyp3proclib import (
     failure,
     get_extra_arg,
-    record_metrics,
     success,
     unzip,
     upload_product,
@@ -253,7 +252,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
         log.info("Confirmed presence of VV and VH polarities for each product.")
 
     # Generate masks
-    proc_success = make_masks(grouped_paths, model, output_path)
+    make_masks(grouped_paths, model, output_path)
     log.info(f"water_masks: {os.listdir(output_path)}")
 
     # Upload products and update database
@@ -269,17 +268,6 @@ def process_water_mask(cfg: dict, n: int) -> None:
         if 'lag' in cfg and 'email_text' in cfg:
             cfg['email_text'] += "\nYou are receiving this product {0}" \
                                  " after it was acquired.".format(cfg['lag'])
-
-        # cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
-        # cfg['original_product_size'] = 0
-        # cfg['process_time'] = str(datetime.now() - cfg['process_start_time'])
-        # cfg['subscriptions'] = cfg['sub_id']
-        # cfg['processes'] = cfg['proc_id']
-        # if proc_success:
-        #     cfg['success'] = True
-        # else:
-        #     cfg['success'] = False
-        # record_metrics(cfg, conn)
 
         log.info(f"Uploading: {zip_file}")
         log.info(f"Mask size: {os.stat(zip_file).st_size}")
