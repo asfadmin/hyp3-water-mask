@@ -270,18 +270,19 @@ def process_water_mask(cfg: dict, n: int) -> None:
             cfg['email_text'] += "\nYou are receiving this product {0}" \
                                  " after it was acquired.".format(cfg['lag'])
 
-        cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
-        cfg['original_product_size'] = 0
-        cfg['process_time'] = str(datetime.now() - cfg['process_start_time'])
-        cfg['subscriptions'] = cfg['sub_id']
-        cfg['processes'] = cfg['proc_id']
-        if proc_success:
-            cfg['success'] = True
-        else:
-            cfg['success'] = False
-        record_metrics(cfg, conn)
+        # cfg['final_product_size'] = [os.stat(zip_file).st_size, ]
+        # cfg['original_product_size'] = 0
+        # cfg['process_time'] = str(datetime.now() - cfg['process_start_time'])
+        # cfg['subscriptions'] = cfg['sub_id']
+        # cfg['processes'] = cfg['proc_id']
+        # if proc_success:
+        #     cfg['success'] = True
+        # else:
+        #     cfg['success'] = False
+        # record_metrics(cfg, conn)
 
-        log.debug("Using file paths: {0}".format(zip_file))
+        log.info(f"Uploading: {zip_file}")
+        log.info(f"Mask size: {os.stat(zip_file).st_size}")
         upload_product(zip_file, cfg, conn)
         success(conn, cfg)
 
