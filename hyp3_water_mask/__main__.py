@@ -29,14 +29,12 @@ import hyp3_water_mask
 
 
 class NoVVVHError(Exception):
-    log.info("Error: RTCs must have 'VV' or 'VH'"
-             "in their filenames to run a water mask.")
+    log.info("ERROR: Hyp3_water_mask requires both VV and VH polarizations.")
     pass
 
 
 def download_product(cfg: dict, url: str, download_dir: str) -> bool:
     cmd = ('wget -nc %s -P %s' % (url, f"{download_dir}"))
-    log.info(f"wget command: {cmd}")
     o, ok = get_asf.execute(cmd, quiet=True)
     if not ok:
         log.info('Failed to download HyP3 product: {0}'.format(url))
@@ -54,8 +52,6 @@ def download_product(cfg: dict, url: str, download_dir: str) -> bool:
         log.info('Download complete')
         log.info(f"Unzipping {zip_file} to {download_dir}")
         unzip(zip_file, download_dir)
-        log.info(f"download_dir ls: {os.listdir(download_dir)}")
-        log.info('Unzip completed.')
         return True
 
 
@@ -155,9 +151,7 @@ def get_tif_paths(regex: str, pths: str) -> list:
 def load_model(model_path: str) -> keras_model:
     """ Loads and returns a model. Attaches the model name and that model's
     history. """
-    model_dir = os.path.dirname(model_path)
     model_name = os.path.basename(model_path)
-    log.info("model_dir: {}".format(model_dir))
     model = kload_model(model_path)
 
     # Attach our extra data to the model
@@ -173,7 +167,6 @@ def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> bool
             img_array = f.ReadAsArray()
             original_shape = img_array.shape
             n_rows, n_cols = get_tile_row_col_count(*original_shape, tile_size=512)
-            log.info(f'tif: {tif}')
             if 'vv' in tif or 'VV' in tif:
                 vv_array = pad_image(f.ReadAsArray(), 512)
                 invalid_pixels = np.nonzero(vv_array == 0.0)
@@ -204,12 +197,9 @@ def make_masks(grouped_paths: dict, model: keras_model, output_dir: str) -> bool
 
 
 def process_water_mask(cfg: dict, n: int) -> None:
-    log.info("process_water_mask")
     product_urls = get_extra_arg(cfg, 'hyp3Products', '')
+    log.info(f"Processing water mask(s) from subscription {cfg['sub_name']} for {cfg['username']}")
     log.info(f"products for masking: {product_urls}")
-    log.info(f"cfg: {cfg}")
-    message = "Processing water mask(s) from subscription {0} for {1}"
-    log.info(message.format(cfg['sub_name'], cfg['username']))
 
     # Start downloading and processing
     date_time = str(datetime.now())
@@ -217,12 +207,10 @@ def process_water_mask(cfg: dict, n: int) -> None:
     download_count = 0
 
     # load model
-    log.info(os.listdir())
     model = load_model("/home/conda/network.h5")
-    log.info(f"model: {model}")
+    log.info(f"Loaded model: {model}")
 
     workdir = os.getcwd()
-    log.info(f"workdir: {workdir}")
     products_path = f"{workdir}/products"
     output_path = f"{workdir}/output"
     os.mkdir(output_path)
@@ -232,7 +220,7 @@ def process_water_mask(cfg: dict, n: int) -> None:
         if download_product(cfg, product_url, f"{products_path}/"):
             download_count += 1
         if download_count == 0:
-            msg = "No products for this job could be found. Are they expired?"
+            msg = "No products for this job could be found. Have they expired?"
             failure(cfg, msg)
             msg = "No products downloaded to process."
             raise Exception(msg)
@@ -243,11 +231,10 @@ def process_water_mask(cfg: dict, n: int) -> None:
     product_paths = f"{products_path}/*/*"
     tif_regex = "\\w[\\--~]{5,300}(_|-)V(v|V|h|H).(tif|tiff)$"
     tif_paths = get_tif_paths(tif_regex, product_paths)
-    log.info(f"tif_paths: {tif_paths}")
     grouped_paths = group_polarizations(tif_paths)
-    log.info(f"grouped_paths: {grouped_paths}")
+    log.info(f"grouped VV/VH paths for masking: {grouped_paths}")
     if not confirm_dual_polarizations(grouped_paths):
-        log.info("ERROR: Hyp3_water_mask requires both VV and VH polarizations.")
+        raise NoVVVHError
     else:
         log.info("Confirmed presence of VV and VH polarities for each product.")
 
@@ -259,15 +246,13 @@ def process_water_mask(cfg: dict, n: int) -> None:
     with get_db_connection('hyp3-db') as conn:
         log.debug(f"Adding citation and zipping folder at {output_path}")
         add_citation(cfg, output_path)
-        zip_file = f"water_mask_{cfg['sub_id']}.zip"
+        zip_file = f"water_mask_sub{cfg['sub_id']}_{date_time}.zip"
         log.info(f"zip_file: {zip_file}")
         zip_dir(output_path, zip_file)
 
-        log.info(f"workdir ls: {os.listdir(workdir)}")
-
         if 'lag' in cfg and 'email_text' in cfg:
-            cfg['email_text'] += "\nYou are receiving this product {0}" \
-                                 " after it was acquired.".format(cfg['lag'])
+            cfg['email_text'] += f"\nYou are receiving this product {cfg['lag']}" \
+                                 " after it was acquired."
 
         log.info(f"Uploading: {zip_file}")
         log.info(f"Mask size: {os.stat(zip_file).st_size}")
