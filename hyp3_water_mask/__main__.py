@@ -246,7 +246,8 @@ def process_water_mask(cfg: dict, n: int) -> None:
     with get_db_connection('hyp3-db') as conn:
         log.debug(f"Adding citation and zipping folder at {output_path}")
         add_citation(cfg, output_path)
-        zip_file = f"water_mask_sub{cfg['sub_id']}_{str(date_time).replace(' ', '_').replace(':', '_').replace('.', 'p')}.zip"
+        dt = str(date_time).replace(' ', '_').replace(':', '_').replace('.', 'p')
+        zip_file = f"water_mask_sub{cfg['sub_id']}_{dt}.zip"
         log.info(f"zip_file: {zip_file}")
         zip_dir(output_path, zip_file)
 
