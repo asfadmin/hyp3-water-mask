@@ -203,18 +203,22 @@ def process_water_mask(cfg: dict, n: int) -> None:
 
     # Start downloading and processing
     date_time = str(datetime.now())
+    dt = date_time.replace(' ', '_').replace(':', '_').replace('.', 'p')
     cfg['log'] = f"Processing started at {date_time}"
     download_count = 0
 
-    # load model
+    # Load model
     model = load_model("/home/conda/network.h5")
     log.info(f"Loaded model: {model}")
 
     workdir = os.getcwd()
     products_path = f"{workdir}/products"
-    output_path = f"{workdir}/output"
+    output_name = f"water_mask_sub{cfg['sub_id']}_{dt}"
+    output_path = f"{workdir}/{output_name}"
     os.mkdir(output_path)
     os.mkdir("products")
+
+    # Download products
     for product_url in product_urls:
         log.info(f"product_url: {product_url}")
         if download_product(cfg, product_url, f"{products_path}/"):
@@ -247,7 +251,8 @@ def process_water_mask(cfg: dict, n: int) -> None:
         log.debug(f"Adding citation and zipping folder at {output_path}")
         add_citation(cfg, output_path)
         dt = str(date_time).replace(' ', '_').replace(':', '_').replace('.', 'p')
-        zip_file = f"water_mask_sub{cfg['sub_id']}_{dt}.zip"
+
+        zip_file = f"{output_name}.zip"
         log.info(f"zip_file: {zip_file}")
         zip_dir(output_path, zip_file)
 
