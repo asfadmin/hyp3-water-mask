@@ -3,8 +3,8 @@ name: Test and build
 on:
   push:
     branches:
-    - master
-    - develop
+      - master
+      - develop
   pull_request:
     branches:
       - master
@@ -22,8 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: '0'
 
       - uses: goanpeca/setup-miniconda@v1
         with:
@@ -55,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: '0'
+          fetch-depth: 0
           token: ${{ secrets.TOOLS_BOT_PAK }}
 
       - name: Get associated PR
@@ -140,8 +138,6 @@ jobs:
     needs: package
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: '0'
 
       - uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -170,7 +166,7 @@ jobs:
       - name: Add test tag
         if: github.ref == 'refs/heads/develop'
         run: |
-          export SDIST_VERSION=${{needs.package.outputs.SDIST_VERSION}}
+          export SDIST_VERSION=${{ needs.package.outputs.SDIST_VERSION }}
           docker tag ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:${SDIST_VERSION/+/_} \
               ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:test
           docker push ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:test
@@ -178,7 +174,7 @@ jobs:
       - name: Add latest tag
         if: github.ref == 'refs/heads/master'
         run: |
-          export SDIST_VERSION=${{needs.package.outputs.SDIST_VERSION}}
+          export SDIST_VERSION=${{ needs.package.outputs.SDIST_VERSION }}
           docker tag ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:${SDIST_VERSION/+/_} \
               ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:latest
           docker push ${HYP3_REGISTRY}/${GITHUB_REPOSITORY##*/}:latest
